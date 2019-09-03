@@ -10,15 +10,29 @@ facerec = dlib.face_recognition_model_v1("dlib_face_recognition_resnet_model_v1.
 # Detect a single face from an image
 def detect_face_from_image(image):
     faces = detector(image, 1)
+    print("FACE:", faces[0].bottom()-faces[0].top())
     if len(faces) > 1:
+        # If there is more than 1 face, default to the largest bbox in the image
         print("WARNING: Detected more than 1 face in an image. Defaulting to largest bounding box.")
-        # TODO: NEED TO HANDLE CASE WHERE >1 FACE IS FOUND
-    return faces[0]
+        max_index = -1
+        max_size = -1
+        for idx,fac in enumerage(faces):
+            size = fac.bottom()-fac.top()
+            if size > max_size:
+                max_size = size
+                max_index = idx
+        return faces[max_index]
+    else:
+        return faces[0]
 
 # Detect face landmarks and build the descriptor
 def build_face_descriptor(face, image):
+    # Extract facial landmarks 
     face_shape = shape_pred(image, face)
-    face_descriptor = facerec.compute_face_descriptor(image,face_shape)
+    # Align face
+    face_chip = dlib.get_face_chip(image, face_shape)
+    # Compute descriptor
+    face_descriptor = facerec.compute_face_descriptor(face_chip)
     return face_descriptor
 
 # Calculate similarity between 2 faces
